@@ -6,7 +6,13 @@ with open("OPD_records.txt", "r", encoding="utf-8") as file:
     data = file.read()
 
 # Regular expression to parse the data
-pattern = re.compile(r"(?P<last_name>[A-Z]+), (?P<first_name>[A-Z]+(?: [A-Z]+)*)(?: (?P<middle_name>[A-Z. ]+))? (SDH# \d+)?")
+pattern = re.compile(
+    r"(?P<last_name>[A-Z]+), "                 # Last Name
+    r"(?P<first_name>[A-Z]+(?: [A-Z]+)*) ?"   # First Name
+    r"(?P<middle_name>[A-Z]+(?: [A-Z]+)*)? ?" # Middle Name
+    r"(SDH# \d+|SDH # \d+)?",                # Hospital Number
+    re.IGNORECASE
+)
 
 # List to hold structured data
 entries = []
@@ -18,8 +24,8 @@ for match in pattern.finditer(data):
     middle_name = match.group("middle_name") or ""
     hospital = match.group(4) or ""
     entries.append({
-        "Last Name": last_name,
-        "First Name": first_name,
+        "Last Name": last_name.strip(),
+        "First Name": first_name.strip(),
         "Middle Name": middle_name.strip(),
         "Hospital": hospital.strip(),
     })
