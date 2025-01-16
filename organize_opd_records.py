@@ -1,40 +1,63 @@
-import re
 import pandas as pd
 
-# Read data from the document file
-with open("OPD_records.txt", "r", encoding="utf-8") as file:
-    data = file.read()
+# Initialize an empty list to store the organized data
+organized_data = []
 
-# Regular expression to parse the data
-pattern = re.compile(
-    r"(?P<last_name>[A-Z]+), "                 # Last Name
-    r"(?P<first_name>[A-Z]+(?: [A-Z]+)*) ?"   # First Name
-    r"(?P<middle_name>[A-Z]+(?: [A-Z]+)*)? ?" # Middle Name
-    r"(SDH# \d+|SDH # \d+)?",                # Hospital Number
-    re.IGNORECASE
-)
+# Open and read the text file
+with open('OPD_records.txt', 'r') as file:
+    # Read all lines
+    lines = file.readlines()
+    
+    # Process each line
+    for line in lines:
+        line = line.strip()  # Remove leading/trailing whitespaces
+        
+        # If the line contains 'SDH #' (hospital number)
+        if "SDH #" in line:
+            # Split the line into name and hospital number at the first occurrence of 'SDH #'
+            name_part, hospital_number = line.split('SDH #', 1)
+            hospital_number = 'SDH #' + hospital_number.strip()  # Format the hospital number
+            
+            # Split the name part into individual name components
+            name_parts = name_part.split(",")
+            
+            # Handle cases where the name part has two or three components (Last, First, and Middle)
+            if len(name_parts) == 2:
+                last_name = name_parts[0].strip()
+                first_name = name_parts[1].strip()
+                middle_name = ""  # No middle name
+            else:
+                last_name = name_parts[0].strip()
+                first_name = name_parts[1].strip()
+                middle_name = name_parts[2].strip() if len(name_parts) > 2 else ""
+            
+            # Append the organized data
+            organized_data.append([last_name, first_name, middle_name, hospital_number])
+        
+        # If the line does not contain 'SDH #' (incomplete record)
+        else:
+            name_parts = line.split(",")
+            if len(name_parts) == 2:
+                last_name = name_parts[0].strip()
+                first_name = name_parts[1].strip()
+                middle_name = ""
+                hospital_number = ""
+            elif len(name_parts) == 3:
+                last_name = name_parts[0].strip()
+                first_name = name_parts[1].strip()
+                middle_name = name_parts[2].strip()
+                hospital_number = ""
+            else:
+                last_name = first_name = middle_name = hospital_number = ""
+            
+            # Append the organized data without hospital number
+            organized_data.append([last_name, first_name, middle_name, hospital_number])
 
-# List to hold structured data
-entries = []
+# Convert the organized data into a DataFrame
+df = pd.DataFrame(organized_data, columns=["Last Name", "First Name", "Middle Name", "Hospital Number"])
 
-# Process each match
-for match in pattern.finditer(data):
-    last_name = match.group("last_name")
-    first_name = match.group("first_name")
-    middle_name = match.group("middle_name") or ""
-    hospital = match.group(4) or ""
-    entries.append({
-        "Last Name": last_name.strip(),
-        "First Name": first_name.strip(),
-        "Middle Name": middle_name.strip(),
-        "Hospital": hospital.strip(),
-    })
+# Save the DataFrame to an Excel file
+df.to_excel("organized_data.xlsx", index=False)
 
-# Convert to DataFrame
-df = pd.DataFrame(entries)
-
-# Save to Excel
-output_file = "organized_data.xlsx"
-df.to_excel(output_file, index=False)
-
-print(f"Data has been organized and saved to {output_file}")
+# Output confirmation message
+print("Data has been organized and saved to 'organized_data.xlsx'.")
